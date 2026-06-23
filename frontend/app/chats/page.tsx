@@ -1,14 +1,12 @@
-export default function ChatsIndex() {
+export default function ChatsIndexPage() {
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-3 bg-muted/30 text-center">
-      <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-emerald-500 text-4xl">
-        💬
+    <div className="flex flex-1 items-center justify-center p-8 text-center">
+      <div className="max-w-sm space-y-2">
+        <h2 className="text-xl font-medium">Pick a conversation</h2>
+        <p className="text-sm text-muted-foreground">
+          Choose one on the left, or hit “+ New chat” to start a new one.
+        </p>
       </div>
-      <h2 className="text-xl font-semibold">Chatter</h2>
-      <p className="max-w-xs text-sm text-muted-foreground">
-        Select a conversation or start a new one. Real-time messaging, groups,
-        attachments, and a live shared terminal.
-      </p>
     </div>
   );
 }

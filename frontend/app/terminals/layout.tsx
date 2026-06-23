@@ -4,7 +4,7 @@ import { OnlineProvider } from "@/components/online-provider";
 import { Sidebar } from "@/components/sidebar";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function ChatsLayout({
+export default async function TerminalsLayout({
   children,
 }: {
   children: React.ReactNode;

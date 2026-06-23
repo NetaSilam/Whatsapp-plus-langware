@@ -17,10 +17,8 @@ dist/
 .cache/
 *.tsbuildinfo
 next-env.d.ts
+.claude.zip
 
 # supabase local state
 supabase/.temp/
 supabase/.branches/
-
-# CI workflow excluded (needs 'workflow' OAuth scope to push)
-.github/workflows/

@@ -17,8 +17,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 
-export default function LoginPage() {
+export default function SignupPage() {
   const router = useRouter();
+  const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -30,9 +31,10 @@ export default function LoginPage() {
     setPending(true);
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
+      options: { data: { display_name: displayName } },
     });
 
     if (error) {
@@ -49,11 +51,22 @@ export default function LoginPage() {
     <main className="flex min-h-screen items-center justify-center p-6">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>Welcome back to WhatsApp+</CardTitle>
-          <CardDescription>Sign in to keep chatting.</CardDescription>
+          <CardTitle>Create your WhatsApp+ account</CardTitle>
+          <CardDescription>One step. Then start chatting.</CardDescription>
         </CardHeader>
         <form onSubmit={onSubmit}>
           <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="displayName">Display name</Label>
+              <Input
+                id="displayName"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                required
+                minLength={1}
+                autoComplete="nickname"
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -73,7 +86,8 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                autoComplete="current-password"
+                minLength={6}
+                autoComplete="new-password"
               />
             </div>
             {error ? (
@@ -84,12 +98,12 @@ export default function LoginPage() {
           </CardContent>
           <CardFooter className="flex flex-col gap-3">
             <Button type="submit" className="w-full" disabled={pending}>
-              {pending ? "Signing in…" : "Sign in"}
+              {pending ? "Creating…" : "Create account"}
             </Button>
             <p className="text-sm text-muted-foreground">
-              No account?{" "}
-              <Link className="underline" href="/signup">
-                Sign up
+              Already have one?{" "}
+              <Link className="underline" href="/login">
+                Log in
               </Link>
             </p>
           </CardFooter>

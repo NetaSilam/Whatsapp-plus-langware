@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Chatter — WhatsApp-style chat",
-  description: "Real-time chat with groups, attachments, and a live shared terminal",
+  title: "WhatsApp+",
+  description: "WhatsApp-style chat with shared host terminals.",
 };
 
 export default function RootLayout({
