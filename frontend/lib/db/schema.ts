@@ -43,6 +43,7 @@ export const conversationMembers = pgTable(
     userId: uuid("user_id").notNull(),
     role: text("role").notNull().default("member"),
     lastReadAt: timestamp("last_read_at", { withTimezone: true }),
+    lastTypingAt: timestamp("last_typing_at", { withTimezone: true }),
     joinedAt: timestamp("joined_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

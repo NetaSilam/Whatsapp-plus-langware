@@ -127,9 +127,10 @@ export async function POST(req: NextRequest) {
       );
   }
 
+  // Mark read and clear my "typing" state now that the message is sent.
   await db
     .update(conversationMembers)
-    .set({ lastReadAt: new Date() })
+    .set({ lastReadAt: new Date(), lastTypingAt: null })
     .where(
       and(
         eq(conversationMembers.conversationId, conversationId),

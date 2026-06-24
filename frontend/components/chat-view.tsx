@@ -59,7 +59,11 @@ export function ChatView({
   const [sending, setSending] = useState(false);
   const [pending, setPending] = useState<Attachment[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [typing, setTyping] = useState<{ userId: string; displayName: string }[]>(
+    [],
+  );
   const lastAt = useRef<string | null>(null);
+  const lastPingRef = useRef(0);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -75,6 +79,7 @@ export function ChatView({
 
   useEffect(() => {
     let active = true;
+    setTyping([]);
     const base = `/api/messages?conversationId=${encodeURIComponent(conversationId)}`;
     const poll = async () => {
       const url = lastAt.current
@@ -84,14 +89,37 @@ export function ChatView({
       if (!res.ok || !active) return;
       append(await res.json());
     };
+    const pollTyping = async () => {
+      const res = await fetch(
+        `/api/typing?conversationId=${encodeURIComponent(conversationId)}`,
+      );
+      if (res.ok && active) setTyping(await res.json());
+    };
     poll();
+    pollTyping();
     const t = setInterval(poll, 2000);
+    const tt = setInterval(pollTyping, 2000);
     return () => {
       active = false;
       clearInterval(t);
+      clearInterval(tt);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId]);
+
+  // Broadcast that I'm typing, throttled to once every 2s while editing.
+  function onDraftChange(value: string) {
+    setDraft(value);
+    const now = Date.now();
+    if (now - lastPingRef.current > 2000) {
+      lastPingRef.current = now;
+      fetch("/api/typing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId }),
+      }).catch(() => {});
+    }
+  }
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -192,7 +220,14 @@ export function ChatView({
         </div>
       )}
 
-      <form onSubmit={send} className="mt-2 flex items-center gap-2 border-t pt-3">
+      <div className="h-5 px-1 pt-1 text-xs italic text-muted-foreground">
+        {typing.length > 0 &&
+          `${typing.map((t) => t.displayName).join(", ")} ${
+            typing.length === 1 ? "is" : "are"
+          } typing…`}
+      </div>
+
+      <form onSubmit={send} className="mt-1 flex items-center gap-2 border-t pt-3">
         <input
           ref={fileRef}
           type="file"
@@ -211,7 +246,7 @@ export function ChatView({
         </Button>
         <Input
           value={draft}
-          onChange={(e) => setDraft(e.target.value)}
+          onChange={(e) => onDraftChange(e.target.value)}
           placeholder="Type a message"
           autoFocus
         />
