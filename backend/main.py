@@ -8,13 +8,14 @@ Interactive docs: http://localhost:8080/docs
 """
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 load_dotenv()
 
 from auth import CurrentUser, get_current_user  # noqa: E402  (needs env loaded)
+from terminal import terminal_session  # noqa: E402
 
 app = FastAPI(title="WhatsApp+ API", version="0.1.0")
 
@@ -43,6 +44,12 @@ async def health() -> HealthResponse:
 async def me(user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
     """Return the authenticated caller — proves Supabase JWT verification."""
     return user
+
+
+@app.websocket("/ws/terminal/{terminal_id}")
+async def ws_terminal(ws: WebSocket, terminal_id: str, token: str = "") -> None:
+    """Live PTY shell for terminal `terminal_id` (auth via ?token=)."""
+    await terminal_session(ws, terminal_id, token)
 
 
 if __name__ == "__main__":

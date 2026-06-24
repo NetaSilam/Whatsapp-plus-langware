@@ -12,6 +12,10 @@ create table if not exists public.profiles (
 
 alter table public.profiles enable row level security;
 
+-- PostgREST checks table privileges in addition to RLS, so grant the
+-- authenticated role access; RLS policies below scope what it can actually see.
+grant select, update on public.profiles to authenticated;
+
 -- Any signed-in user can read profiles (needed to find people to chat with).
 create policy "profiles readable by authenticated"
   on public.profiles for select
