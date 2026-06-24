@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "WhatsApp+",
-  description: "WhatsApp-style chat with shared host terminals.",
+  description: "Chat, groups, attachments, status, and a live terminal",
 };
 
 export default function RootLayout({

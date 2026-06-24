@@ -12,12 +12,9 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "@radix-ui/react-label": "^2.1.10",
     "@radix-ui/react-slot": "^1.2.0",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.58.0",
-    "@xterm/addon-fit": "^0.11.0",
-    "@xterm/xterm": "^6.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.44.2",

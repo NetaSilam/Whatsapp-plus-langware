@@ -17,7 +17,6 @@ dist/
 .cache/
 *.tsbuildinfo
 next-env.d.ts
-.claude.zip
 
 # supabase local state
 supabase/.temp/

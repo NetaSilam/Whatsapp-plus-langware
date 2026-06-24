@@ -1,0 +1,7 @@
+-- Initial migration. Canonical source of truth for the database schema —
+-- mirror any change into frontend/lib/db/schema.ts (or regenerate it with
+-- `npm run db:pull`).
+--
+-- The WhatsApp+ schema is introduced incrementally, one phase per migration,
+-- starting with `profiles` in Phase 1. This file intentionally creates no
+-- tables so the bootstrap database is clean.
