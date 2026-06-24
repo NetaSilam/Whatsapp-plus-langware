@@ -4,6 +4,7 @@
 // setup. Replace this page with your real landing page once everything is
 // green.
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -97,8 +98,17 @@ export default function Home() {
       <p className="mt-2 text-muted-foreground">
         Chat, groups, attachments, status, and a live terminal. This is the
         dev status board — it verifies the frontend, backend, and Supabase are
-        wired up. Real features arrive in Phase 1.
+        wired up.
       </p>
+
+      <div className="mt-6 flex gap-3">
+        <Button asChild>
+          <Link href="/login">Log in</Link>
+        </Button>
+        <Button asChild variant="outline">
+          <Link href="/signup">Sign up</Link>
+        </Button>
+      </div>
 
       <div className="mt-8 grid gap-4">
         <StatusCard
