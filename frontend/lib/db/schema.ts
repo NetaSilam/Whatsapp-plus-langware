@@ -19,6 +19,7 @@ export const profiles = pgTable("profiles", {
   id: uuid("id").primaryKey(),
   displayName: text("display_name").notNull(),
   avatarPath: text("avatar_path"),
+  bio: text("bio"),
   lastSeen: timestamp("last_seen", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
@@ -92,6 +93,8 @@ export const groups = pgTable("groups", {
   id: uuid("id").primaryKey().defaultRandom(),
   conversationId: uuid("conversation_id").notNull().unique(),
   name: text("name").notNull(),
+  description: text("description"),
+  avatarPath: text("avatar_path"),
   createdBy: uuid("created_by").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
@@ -113,6 +116,17 @@ export const statuses = pgTable(
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   },
   (t) => [index("statuses_expires_idx").on(t.expiresAt)],
+);
+
+// Members invited to share a terminal session (Phase 3b).
+export const terminalMembers = pgTable(
+  "terminal_members",
+  {
+    terminalId: uuid("terminal_id").notNull(),
+    userId: uuid("user_id").notNull(),
+    invitedAt: timestamp("invited_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.terminalId, t.userId] })],
 );
 
 // A saved terminal session (Phase 3). Opening it starts a PTY shell over WS.

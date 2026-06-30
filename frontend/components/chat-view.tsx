@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { EmojiPickerButton } from "@/components/emoji-picker-button";
 
 type Attachment = {
   id: string;
@@ -21,18 +22,52 @@ type Message = {
   attachments: Attachment[];
 };
 
+function ImageLightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+      onClick={onClose}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={alt}
+        className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      />
+      <button
+        className="absolute right-4 top-4 text-2xl text-white opacity-80 hover:opacity-100"
+        onClick={onClose}
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
+
 function AttachmentView({ a }: { a: Attachment }) {
+  const [lightbox, setLightbox] = useState(false);
   const href = `/api/attachments?id=${a.id}`;
+  const close = useCallback(() => setLightbox(false), []);
+
   if (a.kind === "image") {
     return (
-      <a href={href} target="_blank" rel="noreferrer">
+      <>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={href}
           alt={a.fileName}
-          className="mt-1 max-h-60 rounded-md border"
+          className="mt-1 max-h-60 cursor-zoom-in rounded-md border"
+          onClick={() => setLightbox(true)}
         />
-      </a>
+        {lightbox && <ImageLightbox src={href} alt={a.fileName} onClose={close} />}
+      </>
     );
   }
   return (
@@ -244,6 +279,7 @@ export function ChatView({
         >
           {uploading ? "…" : "📎"}
         </Button>
+        <EmojiPickerButton onEmoji={(e) => setDraft((d) => d + e)} />
         <Input
           value={draft}
           onChange={(e) => onDraftChange(e.target.value)}

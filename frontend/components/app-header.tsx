@@ -36,6 +36,9 @@ export async function AppHeader() {
             <Link href="/terminals" className="hover:underline">
               Terminals
             </Link>
+            <Link href="/profile" className="hover:underline">
+              Profile
+            </Link>
           </nav>
         </div>
         <div className="flex items-center gap-3">

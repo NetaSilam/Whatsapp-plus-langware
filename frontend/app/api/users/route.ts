@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { profiles } from "@/lib/db/schema";
 import { getCurrentUser } from "@/lib/auth";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 // GET /api/users?q=  — search people to start a chat with (excludes self).
 export async function GET(req: NextRequest) {
@@ -25,5 +26,16 @@ export async function GET(req: NextRequest) {
     )
     .limit(20);
 
-  return NextResponse.json(rows);
+  if (rows.length === 0) return NextResponse.json([]);
+
+  const admin = createAdminClient();
+  const { data } = await admin.auth.admin.listUsers({ perPage: 1000 });
+  const emailMap = new Map(data?.users.map((u) => [u.id, u.email ?? ""]));
+
+  const result = rows.map((r) => ({
+    ...r,
+    email: emailMap.get(r.id) ?? "",
+  }));
+
+  return NextResponse.json(result);
 }

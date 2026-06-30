@@ -2,32 +2,45 @@ import { and, desc, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 import { db } from "@/lib/db";
-import { terminals } from "@/lib/db/schema";
+import { terminals, terminalMembers, profiles } from "@/lib/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 
-// Static route (id passed in the body for PATCH) — the /api/* proxy shadows
-// dynamic API route handlers, so we avoid /api/terminals/[id].
-
-// GET /api/terminals — my terminals, newest first.
+// GET /api/terminals — my terminals + terminals I was invited to.
 export async function GET() {
   const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  const rows = await db
-    .select()
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const owned = await db
+    .select({ id: terminals.id, name: terminals.name, status: terminals.status, createdAt: terminals.createdAt, role: terminals.ownerId })
     .from(terminals)
     .where(eq(terminals.ownerId, user.id))
     .orderBy(desc(terminals.createdAt));
-  return NextResponse.json(rows);
+
+  const shared = await db
+    .select({
+      id: terminals.id,
+      name: terminals.name,
+      status: terminals.status,
+      createdAt: terminals.createdAt,
+      ownerName: profiles.displayName,
+    })
+    .from(terminalMembers)
+    .innerJoin(terminals, eq(terminalMembers.terminalId, terminals.id))
+    .innerJoin(profiles, eq(terminals.ownerId, profiles.id))
+    .where(eq(terminalMembers.userId, user.id))
+    .orderBy(desc(terminals.createdAt));
+
+  return NextResponse.json({
+    owned: owned.map((t) => ({ ...t, role: "owner" })),
+    shared: shared.map((t) => ({ ...t, role: "member" })),
+  });
 }
 
 // POST /api/terminals  { name }  — create a terminal.
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { name } = await req.json().catch(() => ({}));
   const label = typeof name === "string" && name.trim() ? name.trim() : "Terminal";
   const [row] = await db
@@ -40,9 +53,8 @@ export async function POST(req: NextRequest) {
 // PATCH /api/terminals  { id, status }  — update (e.g. close) my terminal.
 export async function PATCH(req: NextRequest) {
   const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { id, status } = await req.json().catch(() => ({}));
   if (!id || (status !== "active" && status !== "closed")) {
     return NextResponse.json({ error: "Invalid id/status" }, { status: 400 });
@@ -52,8 +64,6 @@ export async function PATCH(req: NextRequest) {
     .set({ status, lastActiveAt: new Date() })
     .where(and(eq(terminals.id, id), eq(terminals.ownerId, user.id)))
     .returning();
-  if (!row) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
+  if (!row) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json(row);
 }

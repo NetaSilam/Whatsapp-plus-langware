@@ -10,6 +10,9 @@ import {
   profiles,
 } from "@/lib/db/schema";
 import { getCurrentUser } from "@/lib/auth";
+import { createAdminClient } from "@/lib/supabase/admin";
+
+const BUCKET = "attachments";
 
 // GET /api/conversations — my conversations, each with a display title (group
 // name, or the other participant for a DM) and a last-message preview.
@@ -42,6 +45,7 @@ export async function GET() {
       conversationId: conversationMembers.conversationId,
       userId: profiles.id,
       displayName: profiles.displayName,
+      avatarPath: profiles.avatarPath,
     })
     .from(conversationMembers)
     .innerJoin(profiles, eq(profiles.id, conversationMembers.userId))
@@ -52,9 +56,9 @@ export async function GET() {
       ),
     );
 
-  // Group names.
+  // Group names + avatars.
   const groupRows = await db
-    .select({ conversationId: groups.conversationId, name: groups.name })
+    .select({ conversationId: groups.conversationId, name: groups.name, avatarPath: groups.avatarPath })
     .from(groups)
     .where(inArray(groups.conversationId, ids));
 
@@ -70,39 +74,44 @@ export async function GET() {
     .orderBy(desc(messages.createdAt));
 
   const peerByConv = new Map(others.map((o) => [o.conversationId, o]));
-  const groupNameByConv = new Map(groupRows.map((g) => [g.conversationId, g.name]));
+  const groupByConv = new Map(groupRows.map((g) => [g.conversationId, g]));
   const lastByConv = new Map<string, (typeof msgs)[number]>();
   for (const m of msgs) {
     if (!lastByConv.has(m.conversationId)) lastByConv.set(m.conversationId, m);
   }
 
-  const result = ids
-    .map((id) => {
-      const type = typeByConv.get(id) ?? "dm";
-      const peer = peerByConv.get(id);
-      const last = lastByConv.get(id);
-      const title =
-        type === "group"
-          ? (groupNameByConv.get(id) ?? "Group")
-          : (peer?.displayName ?? "Conversation");
-      return {
-        id,
-        type,
-        title,
-        lastMessage: last
-          ? { body: last.body, createdAt: last.createdAt }
-          : null,
-      };
-    })
-    .sort((a, b) => {
-      const at = a.lastMessage?.createdAt
-        ? new Date(a.lastMessage.createdAt).getTime()
-        : 0;
-      const bt = b.lastMessage?.createdAt
-        ? new Date(b.lastMessage.createdAt).getTime()
-        : 0;
-      return bt - at;
-    });
+  // Collect avatar paths that need signed URLs.
+  const admin = createAdminClient();
+  async function signedUrl(path: string | null | undefined): Promise<string | null> {
+    if (!path) return null;
+    const { data } = await admin.storage.from(BUCKET).createSignedUrl(path, 300);
+    return data?.signedUrl ?? null;
+  }
+
+  const result = await Promise.all(
+    ids
+      .map((id) => {
+        const type = typeByConv.get(id) ?? "dm";
+        const peer = peerByConv.get(id);
+        const group = groupByConv.get(id);
+        const last = lastByConv.get(id);
+        const title =
+          type === "group"
+            ? (group?.name ?? "Group")
+            : (peer?.displayName ?? "Conversation");
+        const avatarPath = type === "group" ? group?.avatarPath : peer?.avatarPath;
+        return { id, type, title, avatarPath: avatarPath ?? null, lastMessage: last ? { body: last.body, createdAt: last.createdAt } : null };
+      })
+      .sort((a, b) => {
+        const at = a.lastMessage?.createdAt ? new Date(a.lastMessage.createdAt).getTime() : 0;
+        const bt = b.lastMessage?.createdAt ? new Date(b.lastMessage.createdAt).getTime() : 0;
+        return bt - at;
+      })
+      .map(async (c) => {
+        const { avatarPath, ...rest } = c;
+        return { ...rest, avatarUrl: await signedUrl(avatarPath) };
+      }),
+  );
 
   return NextResponse.json(result);
 }

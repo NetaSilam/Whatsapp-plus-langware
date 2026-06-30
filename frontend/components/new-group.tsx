@@ -5,8 +5,9 @@ import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { EmojiPickerButton } from "@/components/emoji-picker-button";
 
-type UserHit = { id: string; displayName: string };
+type UserHit = { id: string; displayName: string; email: string };
 
 export function NewGroup() {
   const router = useRouter();
@@ -63,11 +64,14 @@ export function NewGroup() {
     <div className="grid gap-4">
       <div className="grid gap-2">
         <label className="text-sm font-medium">Group name</label>
-        <Input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Weekend plans"
-        />
+        <div className="flex gap-2">
+          <Input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Weekend plans"
+          />
+          <EmojiPickerButton onEmoji={(e) => setName((n) => n + e)} direction="bottom" />
+        </div>
       </div>
 
       {selected.length > 0 && (
@@ -97,9 +101,10 @@ export function NewGroup() {
               <button
                 key={u.id}
                 onClick={() => add(u)}
-                className="rounded px-3 py-2 text-left text-sm hover:bg-accent"
+                className="grid rounded px-3 py-2 text-left text-sm hover:bg-accent"
               >
-                {u.displayName}
+                <span>{u.displayName}</span>
+                <span className="text-xs text-muted-foreground">{u.email}</span>
               </button>
             ))}
           </div>

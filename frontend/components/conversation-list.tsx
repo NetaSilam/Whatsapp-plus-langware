@@ -11,10 +11,11 @@ type Conversation = {
   id: string;
   type: "dm" | "group";
   title: string;
+  avatarUrl: string | null;
   lastMessage: { body: string | null; createdAt: string } | null;
 };
 
-type UserHit = { id: string; displayName: string };
+type UserHit = { id: string; displayName: string; email: string };
 
 export function ConversationList() {
   const router = useRouter();
@@ -98,7 +99,10 @@ export function ConversationList() {
                 onClick={() => startChat(u.id)}
                 className="flex items-center justify-between rounded px-3 py-2 text-left text-sm hover:bg-accent"
               >
-                <span>{u.displayName}</span>
+                <span className="grid">
+                  <span>{u.displayName}</span>
+                  <span className="text-xs text-muted-foreground">{u.email}</span>
+                </span>
                 <span className="text-xs text-muted-foreground">Message</span>
               </button>
             ))}
@@ -116,9 +120,18 @@ export function ConversationList() {
           <Link
             key={c.id}
             href={`/chats/${c.id}`}
-            className="flex items-center justify-between rounded-md border p-3 hover:bg-accent"
+            className="flex items-center gap-3 rounded-md border p-3 hover:bg-accent"
           >
-            <div className="min-w-0">
+            {/* Avatar */}
+            {c.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={c.avatarUrl} alt={c.title} className="h-10 w-10 shrink-0 rounded-full border object-cover" />
+            ) : (
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border bg-muted text-sm font-semibold">
+                {c.title[0]?.toUpperCase()}
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
               <div className="font-medium">
                 {c.type === "group" && (
                   <span className="mr-1 text-xs text-muted-foreground">[group]</span>
@@ -132,7 +145,7 @@ export function ConversationList() {
               </div>
             </div>
             {c.lastMessage && (
-              <time className="shrink-0 pl-3 text-xs text-muted-foreground">
+              <time className="shrink-0 text-xs text-muted-foreground">
                 {new Date(c.lastMessage.createdAt).toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",
