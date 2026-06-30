@@ -61,6 +61,7 @@ export async function POST(req: NextRequest) {
   let mediaPath: string | null = null;
 
   if (file instanceof File && file.size > 0) {
+    if (!file.type.startsWith("image/")) return NextResponse.json({ error: "Only image files are allowed" }, { status: 400 });
     if (file.size > MAX_BYTES) return NextResponse.json({ error: "File too large" }, { status: 413 });
     type = "image";
     const safeName = file.name.replace(/[^\w.\-]+/g, "_");
